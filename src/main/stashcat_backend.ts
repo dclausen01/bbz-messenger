@@ -73,8 +73,35 @@ class StashCatClient {
   }
 
   async get_socket() {
-    // get_socket logic
+      if (!socketio) {
+          throw new Error("socketio package is not available");
+      }
+
+      const sio = socketio.connect(this.push_url);
+
+      sio.on("connect", () => {
+          sio.emit("userid", {
+              hidden_id: this.hidden_id,
+              device_id: this.device_id,
+              client_key: this.client_key,
+          });
+      });
+
+      return new Promise((resolve, reject) => {
+          sio.on("connect_error", (error: { message: any; }) => {
+              reject(new Error(`Socket connection error: ${  error.message}`));
+          });
+
+          sio.on("connect_timeout", () => {
+              reject(new Error("Socket connection timeout"));
+          });
+
+          sio.on("connect", () => {
+              resolve(sio);
+          });
+      });
   }
+
 
   async check() {
     // check logic
